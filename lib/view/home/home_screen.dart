@@ -16,7 +16,7 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AR based Home Decor'),
+        title: const Text('AR based Home Decoration'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
