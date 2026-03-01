@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../widgets/auth_widgets.dart';
+import '../widgets/google_sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,26 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _onForgotPassword() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter your email first.')),
-      );
-      return;
-    }
+  Future<void> _onGoogleSignIn() async {
     final vm = context.read<AuthViewModel>();
-    final success = await vm.sendPasswordReset(email);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success
-                ? 'Password reset email sent.'
-                : vm.errorMessage ?? 'Failed to send reset email.',
-          ),
-        ),
-      );
+    final success = await vm.signInWithGoogle();
+
+    if (success && mounted) {
+      Navigator.pushReplacementNamed(context, '/home');
     }
   }
 
@@ -75,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Logo / Icon
+                    // Logo
                     Center(
                       child: Container(
                         width: 80,
@@ -96,21 +83,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Heading
                     const Text(
                       'Welcome back',
                       style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          fontSize: 28, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Sign in to continue',
                       style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey.shade600,
-                      ),
+                          fontSize: 15, color: Colors.grey.shade600),
                     ),
                     const SizedBox(height: 32),
 
@@ -120,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 16),
                     ],
 
-                    // Email field
+                    // Email
                     AuthTextField(
                       controller: _emailController,
                       label: 'Email',
@@ -131,7 +113,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Email is required';
                         }
-                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                            .hasMatch(value)) {
                           return 'Enter a valid email';
                         }
                         return null;
@@ -139,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Password field
+                    // Password
                     AuthTextField(
                       controller: _passwordController,
                       label: 'Password',
@@ -153,25 +136,51 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
 
-                    // Forgot password
+                    // Forgot password — navigates to dedicated screen
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: _onForgotPassword,
+                        onPressed: () {
+                          vm.clearError();
+                          Navigator.pushNamed(context, '/forgot-password');
+                        },
                         child: const Text('Forgot password?'),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
 
-                    // Login button
+                    // Sign In button
                     AuthButton(
                       label: 'Sign In',
                       onPressed: _onLogin,
                       isLoading: vm.isLoading,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
+
+                    // Divider
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'or',
+                            style: TextStyle(color: Colors.grey.shade500),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Google Sign-In
+                    GoogleSignInButton(
+                      onPressed: _onGoogleSignIn,
+                      isLoading: vm.isLoading,
+                    ),
+                    const SizedBox(height: 28),
 
                     // Navigate to register
                     Row(

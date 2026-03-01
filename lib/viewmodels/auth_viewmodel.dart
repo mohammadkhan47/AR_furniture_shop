@@ -107,6 +107,33 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  // ── Google Sign-In ────────────────────────────────────────────────
+  Future<bool> signInWithGoogle() async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      _user = await _repo.signInWithGoogle();
+      _status = AuthStatus.authenticated;
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'sign-in-cancelled') {
+        // User dismissed — no error message needed
+      } else {
+        _errorMessage = _mapFirebaseError(e.code);
+        notifyListeners();
+      }
+      return false;
+    } catch (e) {
+      _errorMessage = 'Google sign-in failed. Please try again.';
+      notifyListeners();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // ── Logout ───────────────────────────────────────────────────────
   Future<void> logout() async {
     await _repo.logout();
@@ -166,6 +193,8 @@ class AuthViewModel extends ChangeNotifier {
         return 'This account has been disabled.';
       case 'network-request-failed':
         return 'Network error. Check your connection.';
+      case 'sign-in-cancelled':
+        return 'Sign-in was cancelled.';
       default:
         return 'Authentication failed. Please try again.';
     }
