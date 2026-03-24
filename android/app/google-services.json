@@ -12,7 +12,20 @@
           "package_name": "com.example.arshopapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "977046512595-efb8vmm46v4pe764r83k4hmjguu47ln1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.arshopapp",
+            "certificate_hash": "c037396163eeb505a099d09190517cbeb18a09d9"
+          }
+        },
+        {
+          "client_id": "977046512595-gg9bpmbhr88bii0g0rbgm6epe46c01u5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAj3hV7fnLPQIlTywOppPCSd1RqbO6HRzw"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "977046512595-gg9bpmbhr88bii0g0rbgm6epe46c01u5.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "977046512595-urich16p6l0rarsvi62re9eh5s5uup5s.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.arshopapp"
+              }
+            }
+          ]
         }
       }
     }

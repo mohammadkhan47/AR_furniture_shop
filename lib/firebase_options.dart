@@ -64,6 +64,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '977046512595',
     projectId: 'arshopapp-65560',
     storageBucket: 'arshopapp-65560.firebasestorage.app',
+    androidClientId: '977046512595-efb8vmm46v4pe764r83k4hmjguu47ln1.apps.googleusercontent.com',
+    iosClientId: '977046512595-urich16p6l0rarsvi62re9eh5s5uup5s.apps.googleusercontent.com',
     iosBundleId: 'com.example.arshopapp',
   );
 
@@ -73,6 +75,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '977046512595',
     projectId: 'arshopapp-65560',
     storageBucket: 'arshopapp-65560.firebasestorage.app',
+    androidClientId: '977046512595-efb8vmm46v4pe764r83k4hmjguu47ln1.apps.googleusercontent.com',
+    iosClientId: '977046512595-urich16p6l0rarsvi62re9eh5s5uup5s.apps.googleusercontent.com',
     iosBundleId: 'com.example.arshopapp',
   );
 
@@ -85,4 +89,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'arshopapp-65560.firebasestorage.app',
     measurementId: 'G-QJJQHHC6HY',
   );
+
 }

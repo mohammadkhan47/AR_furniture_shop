@@ -1,202 +1,125 @@
-// lib/viewmodels/auth_viewmodel.dart
-//
-// The ViewModel:
-//  - Holds UI state (loading, error, current user)
-//  - Calls the repository for data operations
-//  - NEVER touches widgets directly
-//  - Notifies listeners (Provider) when state changes
-
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/usermodel.dart';
-import '../repositories/auth_repository.dart';
+import '../data/models/user_model.dart';
+import '../data/models/auth_result.dart';
+import '../data/repositories/auth_repo.dart';
 
-// Enum to track auth status cleanly
-enum AuthStatus { initial, authenticated, unauthenticated }
+enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
 class AuthViewModel extends ChangeNotifier {
-  final AuthRepository _repo;
+  final AuthRepository _authRepository;
 
-  AuthViewModel(this._repo) {
-    _listenToAuthChanges();
+  AuthViewModel({AuthRepository? authRepository})
+      : _authRepository = authRepository ?? AuthRepository() {
+    _init();
   }
 
-  // ── State ────────────────────────────────────────────────────────
   AuthStatus _status = AuthStatus.initial;
-  UserModel? _user;
-  bool _isLoading = false;
+  UserModel? _currentUser;
   String? _errorMessage;
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
-  // ── Getters ──────────────────────────────────────────────────────
   AuthStatus get status => _status;
-  UserModel? get user => _user;
-  bool get isLoading => _isLoading;
+  UserModel? get currentUser => _currentUser;
   String? get errorMessage => _errorMessage;
+  bool get isLoading => _isLoading;
+  bool get obscurePassword => _obscurePassword;
+  bool get obscureConfirmPassword => _obscureConfirmPassword;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
 
-  // ── Listen to Firebase auth state ────────────────────────────────
-  void _listenToAuthChanges() {
-    _repo.authStateChanges.listen((firebaseUser) async {
-      if (firebaseUser == null) {
-        _status = AuthStatus.unauthenticated;
-        _user = null;
-      } else {
-        // Try to fetch full profile from Firestore
-        final profile = await _repo.fetchUserProfile(firebaseUser.uid);
-        _user = profile;
-        _status = AuthStatus.authenticated;
-      }
+  void _init() {
+    _authRepository.authStateChanges.listen((User? user) {
+      _status = user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated;
+      if (user == null) _currentUser = null;
       notifyListeners();
     });
   }
 
-  // ── Register ─────────────────────────────────────────────────────
-  Future<bool> register({
-    required String email,
-    required String password,
-    required String displayName,
-  }) async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      _user = await _repo.register(
-        email: email,
-        password: password,
-        displayName: displayName,
-      );
-      _status = AuthStatus.authenticated;
-      notifyListeners();
-      return true;
-    } on FirebaseAuthException catch (e) {
-      _errorMessage = _mapFirebaseError(e.code);
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _errorMessage = 'Something went wrong. Please try again.';
-      notifyListeners();
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // ── Login ────────────────────────────────────────────────────────
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      _user = await _repo.login(email: email, password: password);
-      _status = AuthStatus.authenticated;
-      notifyListeners();
-      return true;
-    } on FirebaseAuthException catch (e) {
-      _errorMessage = _mapFirebaseError(e.code);
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _errorMessage = 'Something went wrong. Please try again.';
-      notifyListeners();
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // ── Google Sign-In ────────────────────────────────────────────────
-  Future<bool> signInWithGoogle() async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      _user = await _repo.signInWithGoogle();
-      _status = AuthStatus.authenticated;
-      notifyListeners();
-      return true;
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'sign-in-cancelled') {
-        // User dismissed — no error message needed
-      } else {
-        _errorMessage = _mapFirebaseError(e.code);
-        notifyListeners();
-      }
-      return false;
-    } catch (e) {
-      _errorMessage = 'Google sign-in failed. Please try again.';
-      notifyListeners();
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // ── Logout ───────────────────────────────────────────────────────
-  Future<void> logout() async {
-    await _repo.logout();
-    _user = null;
-    _status = AuthStatus.unauthenticated;
+  void togglePasswordVisibility() {
+    _obscurePassword = !_obscurePassword;
     notifyListeners();
   }
 
-  // ── Forgot password ──────────────────────────────────────────────
-  Future<bool> sendPasswordReset(String email) async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      await _repo.sendPasswordResetEmail(email);
-      return true;
-    } on FirebaseAuthException catch (e) {
-      _errorMessage = _mapFirebaseError(e.code);
-      notifyListeners();
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // ── Helpers ──────────────────────────────────────────────────────
-  void _setLoading(bool value) {
-    _isLoading = value;
+  void toggleConfirmPasswordVisibility() {
+    _obscureConfirmPassword = !_obscureConfirmPassword;
     notifyListeners();
-  }
-
-  void _clearError() {
-    _errorMessage = null;
   }
 
   void clearError() {
-    _clearError();
+    _errorMessage = null;
     notifyListeners();
   }
 
-  // Maps Firebase error codes to user-friendly messages
-  String _mapFirebaseError(String code) {
-    switch (code) {
-      case 'email-already-in-use':
-        return 'This email is already registered.';
-      case 'invalid-email':
-        return 'Please enter a valid email address.';
-      case 'weak-password':
-        return 'Password must be at least 6 characters.';
-      case 'user-not-found':
-        return 'No account found with this email.';
-      case 'wrong-password':
-        return 'Incorrect password. Please try again.';
-      case 'too-many-requests':
-        return 'Too many attempts. Please try again later.';
-      case 'user-disabled':
-        return 'This account has been disabled.';
-      case 'network-request-failed':
-        return 'Network error. Check your connection.';
-      case 'sign-in-cancelled':
-        return 'Sign-in was cancelled.';
-      default:
-        return 'Authentication failed. Please try again.';
+  Future<AuthResult> register({
+    required String email, required String password, required String fullName,
+  }) async {
+    _setLoading(true);
+    _errorMessage = null;
+    final result = await _authRepository.registerWithEmail(
+      email: email, password: password, fullName: fullName,
+    );
+    if (result.success) {
+      _currentUser = result.data as UserModel?;
+      _status = AuthStatus.authenticated;
+    } else {
+      _errorMessage = result.message;
+      _status = AuthStatus.error;
     }
+    _setLoading(false);
+    return result;
+  }
+
+  Future<AuthResult> login({required String email, required String password}) async {
+    _setLoading(true);
+    _errorMessage = null;
+    final result = await _authRepository.signInWithEmail(email: email, password: password);
+    if (result.success) {
+      _currentUser = result.data as UserModel?;
+      _status = AuthStatus.authenticated;
+    } else {
+      _errorMessage = result.message;
+      _status = AuthStatus.error;
+    }
+    _setLoading(false);
+    return result;
+  }
+
+  Future<AuthResult> signInWithGoogle() async {
+    _setLoading(true);
+    _errorMessage = null;
+    final result = await _authRepository.signInWithGoogle();
+    if (result.success) {
+      _currentUser = result.data as UserModel?;
+      _status = AuthStatus.authenticated;
+    } else {
+      _errorMessage = result.message;
+      _status = AuthStatus.error;
+    }
+    _setLoading(false);
+    return result;
+  }
+
+  Future<AuthResult> sendPasswordResetEmail(String email) async {
+    _setLoading(true);
+    _errorMessage = null;
+    final result = await _authRepository.sendPasswordResetEmail(email);
+    if (!result.success) _errorMessage = result.message;
+    _setLoading(false);
+    return result;
+  }
+
+  Future<void> signOut() async {
+    _setLoading(true);
+    await _authRepository.signOut();
+    _currentUser = null;
+    _status = AuthStatus.unauthenticated;
+    _setLoading(false);
+  }
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
   }
 }
