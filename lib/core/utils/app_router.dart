@@ -6,7 +6,7 @@ import '../../view/auth/register_screen.dart';
 import '../../view/auth/splash_screen.dart';
 import '../../view/product/product_detail_screen.dart';
 import '../constant/app_constants.dart';
-import '../../view/home/home_screen.dart';
+import '../../view/home/home_screen.dart' hide Widget;
 import '../../view/cart/cart_screen.dart';
 
 
